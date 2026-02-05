@@ -5,215 +5,262 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Agri-Chain | Login & Signup</title>
 
-<!-- Firebase SDKs (COMPAT) -->
+<!-- Firebase SDKs (ONLY SDKs here) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-
-<!-- Firebase Init -->
-<script src="firebase.js"></script>
 
 <style>
-*{box-sizing:border-box}
+*{ box-sizing:border-box; }
+
 body{
-  margin:0;
-  font-family:Arial,Helvetica,sans-serif;
-  background:linear-gradient(120deg,#020617,#0b1120,#020617);
-  color:white;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:linear-gradient(120deg,#020617,#0b1120,#020617);
+    color:white;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 12px;
 }
+
+/* HEADER */
+.welcome{
+    text-align:center;
+    margin-bottom:20px;
+}
+.welcome h1{
+    color:#22c55e;
+    font-size:32px;
+    margin:0;
+}
+.welcome p{
+    color:#9ca3af;
+    font-size:14px;
+    margin-top:6px;
+}
+
+/* CARD */
 .box{
-  background:#020617;
-  width:100%;
-  max-width:420px;
-  padding:26px;
-  border-radius:18px;
+    background:#020617;
+    padding:24px;
+    width:100%;
+    max-width:380px;
+    border-radius:18px;
+    box-shadow:0 0 35px rgba(0,0,0,0.7);
 }
-h1{text-align:center;color:#22c55e;margin:0}
-p{text-align:center;color:#9ca3af;font-size:14px;margin:6px 0 20px}
-.tabs{display:flex;justify-content:space-around;margin-bottom:18px}
-.tabs span{cursor:pointer;font-weight:bold;color:#9ca3af}
-.tabs .active{color:#22c55e;border-bottom:2px solid #22c55e}
-input,select{
-  width:100%;padding:12px;margin:8px 0;
-  background:#020617;border:1px solid #334155;
-  color:white;border-radius:8px
+
+/* TABS */
+.tabs{
+    display:flex;
+    justify-content:space-around;
+    margin-bottom:20px;
 }
+.tabs span{
+    cursor:pointer;
+    padding-bottom:6px;
+    font-weight:bold;
+    color:#9ca3af;
+    font-size:15px;
+}
+.tabs .active{
+    color:#22c55e;
+    border-bottom:2px solid #22c55e;
+}
+
+/* INPUTS */
+input, select{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    background:#020617;
+    border:1px solid #334155;
+    color:white;
+    border-radius:8px;
+    outline:none;
+    font-size:14px;
+}
+input:focus, select:focus{
+    border-color:#22c55e;
+}
+
+/* BUTTON */
 button{
-  width:100%;padding:12px;margin-top:12px;
-  background:#16a34a;border:none;border-radius:8px;
-  color:white;font-weight:bold;cursor:pointer
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+    background:#16a34a;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:15px;
 }
-button:hover{background:#22c55e}
-.msg{font-size:13px;margin-top:6px;color:#f87171;text-align:center}
-.hidden{display:none}
+button:hover{
+    background:#22c55e;
+}
+
+/* TEXT */
+.error{
+    color:#f87171;
+    font-size:13px;
+    margin-top:6px;
+}
+.success{
+    color:#22c55e;
+    font-size:13px;
+    margin-top:6px;
+}
+.hidden{ display:none; }
+
+@media(max-width:480px){
+    .welcome h1{ font-size:28px; }
+    .box{ padding:20px; }
+}
 </style>
 </head>
 
 <body>
 
-<div class="box">
-  <h1>🌿 Agri-Chain</h1>
-  <p>Smart Farm-to-Fork System</p>
-
-  <div class="tabs">
-    <span id="loginTab" class="active">Login</span>
-    <span id="signupTab">Sign Up</span>
-  </div>
-
-  <!-- LOGIN -->
-  <div id="loginForm">
-    <input id="loginEmail" placeholder="Email">
-    <input id="loginPass" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <div id="loginMsg" class="msg"></div>
-  </div>
-
-  <!-- SIGNUP -->
-  <div id="signupForm" class="hidden">
-    <input id="name" placeholder="Full Name">
-    <input id="mobile" placeholder="Mobile Number (10 digits)">
-    <input id="email" placeholder="Email">
-    <input id="pass" type="password" placeholder="Password">
-
-    <select id="role" onchange="roleChanged()">
-      <option value="">Select Role</option>
-      <option value="farmer">Farmer</option>
-      <option value="retailer">Retailer</option>
-      <option value="shipping">Shipping</option>
-    </select>
-
-    <input id="farmerId" class="hidden" placeholder="Farmer ID">
-
-    <button id="signupBtn" onclick="signup()">Create Account</button>
-    <div id="signupMsg" class="msg"></div>
-  </div>
+<div class="welcome">
+    <h1>🌿 Agri-Chain</h1>
+    <p>Smart Farm-to-Fork Blockchain System</p>
 </div>
 
+<div class="box">
+
+    <div class="tabs">
+        <span id="loginTab" class="active">Login</span>
+        <span id="signupTab">Sign Up</span>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+        <input id="loginEmail" placeholder="Email">
+        <input id="loginPass" type="password" placeholder="Password">
+        <button id="loginBtn">Login</button>
+        <div id="loginMsg" class="error"></div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="signupForm" class="hidden">
+        <input id="signName" placeholder="Full Name">
+        <input id="signMobile" placeholder="Mobile Number">
+        <input id="signEmail" placeholder="Email">
+        <input id="signPass" type="password" placeholder="Password">
+
+        <select id="signRole">
+            <option value="">Select Role</option>
+            <option value="farmer">Farmer</option>
+            <option value="retailer">Retailer</option>
+            <option value="shipping">Shipping</option>
+        </select>
+
+        <button id="signupBtn">Create Account</button>
+        <div id="signupMsg" class="error"></div>
+    </div>
+
+</div>
+
+<!-- 🔥 COMMON FIREBASE FILE -->
+<script src="firebase.js"></script>
+
 <script>
-/* ===============================
-   🔁 TAB SWITCH
-================================ */
+/* ---------- TAB SWITCH ---------- */
 loginTab.onclick = () => {
-  loginForm.classList.remove("hidden");
-  signupForm.classList.add("hidden");
-  loginTab.classList.add("active");
-  signupTab.classList.remove("active");
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+    loginTab.classList.add("active");
+    signupTab.classList.remove("active");
 };
 
 signupTab.onclick = () => {
-  signupForm.classList.remove("hidden");
-  loginForm.classList.add("hidden");
-  signupTab.classList.add("active");
-  loginTab.classList.remove("active");
+    signupForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+    signupTab.classList.add("active");
+    loginTab.classList.remove("active");
 };
 
-/* ===============================
-   👤 ROLE CHANGE
-================================ */
-function roleChanged(){
-  const r = role.value;
-  farmerId.classList.toggle(
-    "hidden",
-    r !== "retailer" && r !== "shipping"
-  );
-}
-
-/* ===============================
-   🆕 SIGNUP
-================================ */
+/* ---------- SIGNUP ---------- */
 function signup(){
   signupMsg.style.color = "#f87171";
   signupMsg.innerText = "";
   signupBtn.disabled = true;
 
-  const n = name.value.trim();
-  const m = mobile.value.trim();
-  const e = email.value.trim();
-  const p = pass.value.trim();
-  const r = role.value;
-  const f = farmerId.value.trim();
+  const n = document.getElementById("name").value.trim();
+  const m = document.getElementById("mobile").value.trim();
+  const e = document.getElementById("email").value.trim();
+  const p = document.getElementById("pass").value.trim();
+  const r = document.getElementById("role").value;
+  const f = document.getElementById("farmerId").value.trim();
 
   if(!n || !m || !e || !p || !r){
     signupBtn.disabled=false;
-    return signupMsg.innerText="All fields required";
+    signupMsg.innerText="All fields required";
+    return;
   }
 
   if(!/^\d{10}$/.test(m)){
     signupBtn.disabled=false;
-    return signupMsg.innerText="Mobile must be 10 digits";
+    signupMsg.innerText="Mobile must be 10 digits";
+    return;
   }
 
   if((r==="retailer" || r==="shipping") && !f){
     signupBtn.disabled=false;
-    return signupMsg.innerText="Farmer ID required";
+    signupMsg.innerText="Farmer ID required";
+    return;
   }
 
   auth.createUserWithEmailAndPassword(e,p)
-  .then(cred=>{
-    return db.collection("users").doc(cred.user.uid).set({
-      name: n,
-      mobile: m,
-      email: e,
-      role: r,
-      farmerId: r==="farmer" ? null : f,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    .then(cred=>{
+      return db.collection("users").doc(cred.user.uid).set({
+        name:n,
+        mobile:m,
+        email:e,
+        role:r,
+        farmerId: r==="farmer" ? null : f,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    })
+    .then(()=>{
+      signupMsg.style.color="#22c55e";
+      signupMsg.innerText="Signup successful ✔";
+      setTimeout(()=>loginTab.click(),1200);
+    })
+    .catch(err=>{
+      signupMsg.innerText=err.message;
+    })
+    .finally(()=>{
+      signupBtn.disabled=false;
     });
-  })
-  .then(()=>{
-    signupMsg.style.color="#22c55e";
-    signupMsg.innerText="Signup successful ✔ Please login";
-    auth.signOut(); // 🔐 safety
-    setTimeout(()=>loginTab.click(),1200);
-  })
-  .catch(err=>{
-    signupMsg.innerText = err.message;
-  })
-  .finally(()=>{
-    signupBtn.disabled=false;
-  });
 }
 
-/* ===============================
-   🔐 LOGIN
-================================ */
-function login(){
-  loginMsg.style.color="#f87171";
-  loginMsg.innerText="";
 
-  const e = loginEmail.value.trim();
-  const p = loginPass.value.trim();
+/* ---------- LOGIN ---------- */
+loginBtn.onclick = async () => {
+    loginMsg.innerText = "";
 
-  if(!e || !p){
-    return loginMsg.innerText="Enter email & password";
-  }
+    try{
+        const cred = await auth.signInWithEmailAndPassword(
+            loginEmail.value,
+            loginPass.value
+        );
 
-  auth.signInWithEmailAndPassword(e,p)
-  .then(cred=>{
-    return db.collection("users").doc(cred.user.uid).get();
-  })
-  .then(doc=>{
-    if(!doc.exists){
-      loginMsg.innerText="User profile not found";
-      return;
+        const doc = await db.collection("users").doc(cred.user.uid).get();
+        const role = doc.data().role;
+
+        if(role === "farmer") location.href = "farmer.html";
+        else if(role === "retailer") location.href = "retailer.html";
+        else location.href = "shippment.html";
+
+    }catch(e){
+        loginMsg.innerText = e.message;
     }
-
-    const r = doc.data().role;
-
-    if(r==="farmer") location.href="farmer.html";
-    else if(r==="retailer") location.href="retailer.html";
-    else if(r==="shipping") location.href="shipment.html";
-  })
-  .catch(err=>{
-    loginMsg.innerText = err.message;
-  });
-}
+};
 </script>
-
 
 </body>
 </html>
