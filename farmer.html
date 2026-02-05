@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agri-Chain – Farmer Dashboard</title>
+
+<!-- Firebase SDKs -->
+ <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<script>
+  // init storage ONLY here
+  const storage = firebase.storage();
+  console.log("Storage OK");
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial;background:#0b1120;color:#e5e7eb}
+
+/* NAV */
+nav{
+  background:#020617;
+  padding:18px 30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.menu span{margin:0 12px;cursor:pointer}
+.wallet{background:#064e3b;padding:6px 14px;border-radius:20px}
+
+/* FARMS */
+#myFarms{padding:30px}
+.farm-scroll{display:flex;gap:20px;overflow-x:auto}
+.farm-card{
+  min-width:220px;
+  background:#020617;
+  padding:16px;
+  border-radius:14px;
+  cursor:pointer;
+}
+.farm-card p{font-size:13px;color:#9ca3af}
+
+/* DASHBOARD */
+.main{display:none;gap:30px;padding:30px}
+.panel{background:#020617;padding:24px;border-radius:16px}
+.left{width:45%}.right{width:55%}
+
+label{font-size:13px;color:#9ca3af;margin-top:10px;display:block}
+input,button{
+  width:100%;padding:10px;margin-top:6px;
+  background:#020617;border:1px solid #334155;color:white;border-radius:8px
+}
+input[disabled]{opacity:.6;cursor:not-allowed}
+button{background:#16a34a;border:none;cursor:pointer}
+button:hover{background:#22c55e}
+
+/* IMAGES */
+.image-grid{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.image-grid img{
+  width:90px;height:90px;object-fit:cover;
+  border-radius:10px;border:1px solid #334155
+}
+
+/* TIMELINE */
+.event{display:flex;justify-content:space-between;margin-bottom:14px}
+.event span{font-size:13px;color:#9ca3af}
+
+/* QR */
+.qr{text-align:center;margin-top:20px}
+.qr img{background:white;padding:8px;border-radius:6px;width:180px}
+.hash{font-size:12px;color:#9ca3af;word-break:break-all}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div>
+    🌿 <b>Agri-Chain</b><br>
+    <span style="font-size:13px;color:#9ca3af">Farmer Dashboard</span>
+  </div>
+  <div class="menu">
+    <span id="myFarmBtn">My Farms</span>
+    <span id="newFarmBtn">New Farm</span>
+  </div>
+  <div class="wallet">👨‍🌾 Farmer</div>
+</nav>
+
+<div id="myFarms">
+  <h2>My Farm Dashboards</h2>
+  <div class="farm-scroll" id="farmScroll"></div>
+</div>
+
+<div class="main" id="dashboard">
+  <div class="panel left">
+    <h3 id="dashTitle"></h3>
+
+    <label>Product Name</label>
+    <input id="product">
+
+    <label>Farm ID</label>
+    <input id="farm">
+
+    <label>Harvesting Date</label>
+    <input type="date" id="harvest">
+
+    <label>Expiry Date</label>
+    <input type="date" id="expiry">
+
+    <label>Quantity (kg)</label>
+    <input id="qty">
+
+    <label>Cost per kg</label>
+    <input id="cost">
+
+    <label>Product Images (max 3)</label>
+    <input type="file" id="images" multiple>
+    <div class="image-grid" id="preview"></div>
+
+    <!-- 💰 PAYMENT PROOF -->
+    <label>Payment Proof (Receipt / UPI Screenshot)</label>
+    <input type="file" id="paymentImg">
+    <div class="image-grid" id="paymentPreview"></div>
+
+    <button id="saveBtn">Submit (Blockchain Lock)</button>
+    <button id="backBtn">⬅ Back</button>
+  </div>
+
+  <div class="panel right">
+    <h3>Supply Chain Timeline</h3>
+    <div id="timeline"></div>
+
+    <div class="qr">
+      <p>Scan to Verify</p>
+      <img id="qrImg">
+      <div class="hash" id="hash"></div>
+      <button id="pdfBtn">🧾 Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<script src="firebase.js"></script>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+let farmerId=null,currentFarmId=null,currentFarmData=null;
+
+/* AUTH */
+auth.onAuthStateChanged(user=>{
+  if(!user) return location.href="index.html";
+  farmerId=user.uid;
+  loadFarms();
+});
+
+/* LOAD FARMS */
+function loadFarms(){
+  db.collection("farms").where("farmerId","==",farmerId)
+  .onSnapshot(snap=>{
+    farmScroll.innerHTML="";
+    snap.forEach(doc=>{
+      const d=doc.data();
+      const c=document.createElement("div");
+      c.className="farm-card";
+      c.innerHTML=`<h3>${d.batchId}</h3><p>${d.product||"No product"}</p>`;
+      c.onclick=()=>openFarm(doc.id,d);
+      farmScroll.appendChild(c);
+    });
+  });
+}
+
+/* CREATE FARM */
+newFarmBtn.onclick=async()=>{
+  await db.collection("farms").add({
+    farmerId,
+    batchId:"B"+Date.now(),
+    immutable:false,
+    images:[],
+    blockHash:Math.random().toString(36).substring(2),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+
+/* OPEN FARM */
+function openFarm(id,data){
+  currentFarmId=id;
+  currentFarmData=data;
+
+  myFarms.style.display="none";
+  dashboard.style.display="flex";
+  dashTitle.innerText="Batch "+data.batchId;
+
+  product.value=data.product||"";
+  farm.value=data.farm||"";
+  harvest.value=data.harvestDate||"";
+  expiry.value=data.expiryDate||"";
+  qty.value=data.qty||"";
+  cost.value=data.cost||"";
+
+  if(data.immutable){
+    product.disabled=farm.disabled=harvest.disabled=
+    expiry.disabled=qty.disabled=cost.disabled=true;
+    saveBtn.style.display="none";
+  }
+
+  renderImages();
+  renderTimeline();
+}
+
+/* IMAGES */
+function renderImages(){
+  preview.innerHTML="";
+  (currentFarmData.images||[]).forEach(u=>{
+    const img=document.createElement("img");
+    img.src=u;preview.appendChild(img);
+  });
+
+  paymentPreview.innerHTML="";
+  if(currentFarmData.paymentImage){
+    const img=document.createElement("img");
+    img.src=currentFarmData.paymentImage;
+    paymentPreview.appendChild(img);
+  }
+}
+
+/* SAVE (IMMUTABLE BLOCK) */
+saveBtn.onclick=async()=>{
+  const imgUrls=[];
+  for(const f of [...images.files].slice(0,3)){
+    const r=storage.ref(`farms/${currentFarmId}/${Date.now()}_${f.name}`);
+    await r.put(f); imgUrls.push(await r.getDownloadURL());
+  }
+
+  let paymentURL=null;
+  if(paymentImg.files[0]){
+    const p=storage.ref(`payments/${currentFarmId}`);
+    await p.put(paymentImg.files[0]);
+    paymentURL=await p.getDownloadURL();
+  }
+
+  await db.collection("farms").doc(currentFarmId).update({
+    product:product.value,
+    farm:farm.value,
+    qty:qty.value,
+    cost:cost.value,
+    harvestDate:harvest.value,
+    expiryDate:expiry.value,
+    images:imgUrls,
+    paymentImage:paymentURL,
+    immutable:true
+  });
+
+  alert("Data committed to blockchain (immutable)");
+};
+
+/* TIMELINE (READ-ONLY FOR FARMER) */
+function row(l,v){
+  return `<div class="event"><div><b>${l}</b><br><span>${v||"-"}</span></div></div>`;
+}
+
+function renderTimeline(){
+  timeline.innerHTML=
+    row("🌱 Harvested",currentFarmData.harvestDate)+
+    row("⏳ Expiry",currentFarmData.expiryDate)+
+    row("🚚 Shipped",currentFarmData.shipDate)+
+    row("🏪 Retail",currentFarmData.retailDate);
+
+  const link=location.origin+"/verify.html?batch="+currentFarmData.batchId;
+  qrImg.src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data="+encodeURIComponent(link);
+  hash.innerText="Blockchain Hash: "+currentFarmData.blockHash;
+}
+
+/* BACK */
+backBtn.onclick=()=>{
+  dashboard.style.display="none";
+  myFarms.style.display="block";
+};
+
+/* PDF */
+pdfBtn.onclick=()=>{
+  const pdf=new jsPDF();
+  pdf.text("Agri-Chain Batch Report",20,20);
+  pdf.text("Batch: "+currentFarmData.batchId,20,30);
+  pdf.text("Product: "+currentFarmData.product,20,40);
+  pdf.text("Blockchain Hash:",20,50);
+  pdf.text(currentFarmData.blockHash,20,60);
+  pdf.save(currentFarmData.batchId+".pdf");
+};
+</script>
+
+</body>
+</html>
