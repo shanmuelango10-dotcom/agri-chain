@@ -110,42 +110,44 @@ signupTab.onclick = () => {
 /* SIGNUP */
 signupBtn.onclick = () => {
   signupMsg.innerText = "";
+  signupMsg.style.color = "#f87171";
 
-  const n = name.value.trim();
-  const m = mobile.value.trim();
-  const e = email.value.trim();
-  const p = pass.value.trim();
-  const r = role.value;
+  const n = document.getElementById("signName").value.trim();
+  const m = document.getElementById("signMobile").value.trim();
+  const e = document.getElementById("signEmail").value.trim();
+  const p = document.getElementById("signPass").value.trim();
+  const r = document.getElementById("signRole").value;
 
   if(!n || !m || !e || !p || !r){
-    signupMsg.innerText="All fields required";
+    signupMsg.innerText = "All fields required";
     return;
   }
 
   if(!/^\d{10}$/.test(m)){
-    signupMsg.innerText="Mobile must be 10 digits";
+    signupMsg.innerText = "Mobile must be 10 digits";
     return;
   }
 
   auth.createUserWithEmailAndPassword(e,p)
     .then(cred=>{
       return db.collection("users").doc(cred.user.uid).set({
-        name:n,
-        mobile:m,
-        email:e,
-        role:r,
+        name: n,
+        mobile: m,
+        email: e,
+        role: r,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     })
     .then(()=>{
-      signupMsg.style.color="#22c55e";
-      signupMsg.innerText="Signup successful ✔";
+      signupMsg.style.color = "#22c55e";
+      signupMsg.innerText = "Signup successful ✔";
       setTimeout(()=>loginTab.click(),1200);
     })
     .catch(err=>{
-      signupMsg.innerText=err.message;
+      signupMsg.innerText = err.message;
     });
 };
+
 
 /* LOGIN */
 loginBtn.onclick = async () => {
